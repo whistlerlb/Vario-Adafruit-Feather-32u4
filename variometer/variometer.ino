@@ -7,7 +7,7 @@
 #include <inv_mpu.h>
 #include <kalmanvert.h>
 #include <beeper.h>
-#include <toneAC.h>
+#include <toneAC.h>  
 #include <SPI.h>
 #include <avr/pgmspace.h>
 #include <lightnmea.h>
@@ -21,7 +21,7 @@
 //#define HAVE_ACCELEROMETER
 #define HAVE_SCREEN
 #define HAVE_GPS
-//#define HAVE_BT
+#define HAVE_BT
 
 
 // the variometer seems to be more stable at half speed
@@ -127,7 +127,7 @@ void setup() {
 
 Serial.begin(9600); //debug
 
-while(!Serial);        //debug wait for the serial monitor.
+//while(!Serial);        //debug wait for the serial monitor.
 //Serial.println("setup start");//debug
 
 /****************/
@@ -135,7 +135,7 @@ while(!Serial);        //debug wait for the serial monitor.
 /****************/
 
 #ifdef HAVE_BT
-Serial1.begin(9600); //Serial1 is TX/RX on 32u4, Serial is for USB only
+Serial1.begin(9600); //Serial1 on TX pin
 #endif //HAVE_BT
 
 
@@ -175,8 +175,7 @@ oled.write("Alt0: ");
   /* init gps */
   /************/
 #ifdef HAVE_GPS
-  Serial1.begin(9600);
-
+  Serial1.begin(9600); //Serial1 on RX pin
 #endif //HAVE_GPS
 
   /******************/
@@ -290,6 +289,12 @@ void loop() {
   Serial1.print(OpenVario);
   Serial1.print("*");
   Serial1.println(XOR,HEX);
+//  Serial.print("$");
+//  Serial.print(OpenVario);
+//  Serial.print("*");
+//  Serial.println(XOR,HEX);
+
+  
 //}
 
 #endif //HAVE_BT
@@ -354,8 +359,8 @@ measuredvbat = analogRead(VBATPIN)*6.6/1024;
 
   /* recalibrate alti with gps */
   if( ! gpsAltiCalibrated ) {
+   Serial.println("No fix");//debug
    if( parser.haveNewAltiValue() ) {
-     Serial.println("1111");//debug
      gpsAltiCalibrationStep++;
      parser.getAlti(); //clear the new value flag
      if( gpsAltiCalibrationStep == GPS_CALIBRATION_STEPS) { //get 5 alti values before calibrating
@@ -404,22 +409,29 @@ measuredvbat = analogRead(VBATPIN)*6.6/1024;
     }
     oled.print(alt0,0);
 
+
+    //Display vertical speed in m/s
     oled.setTextSize(3,2);
     if (kalmanvert.getVelocity() >= 0) {
     oled.setCursor(5,0);
     oled.write(" "); //clear the minus sign (-) if velocity is positive
     oled.setCursor(5,17);
-
     }
     else {
       oled.setCursor(5,0);
     }
-
     oled.print(kalmanvert.getVelocity(),1);
 
+    //Display battery level in V
     oled.setTextSize(1,1);
     oled.setCursor(7,99);
     oled.print(measuredvbat);
+
+    //Display ground speed in m/s
+    oled.setTextSize(1,1);
+    oled.setCursor(5,99);
+    oled.print(parser.getSpeed());
+
 
     NewDataEnable == 0;
   }
